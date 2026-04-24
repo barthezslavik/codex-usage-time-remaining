@@ -1,5 +1,6 @@
 (() => {
   const TARGET_PATH = "/codex/cloud/settings/analytics";
+  const LEGACY_TARGET_PATH = "/codex/settings/usage";
   const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
   const BAR_CLASS = "codex-usage-bar-with-time";
   const QUOTA_FILL_CLASS = "codex-usage-original-fill";
@@ -13,12 +14,32 @@
 
   function isTargetPage() {
     const normalizedPath = window.location.pathname.replace(/\/$/, "");
-    return window.location.hostname === "chatgpt.com" && normalizedPath === TARGET_PATH;
+    return (
+      window.location.hostname === "chatgpt.com" &&
+      (normalizedPath === TARGET_PATH || normalizedPath === LEGACY_TARGET_PATH)
+    );
   }
 
   function scheduleRender() {
     window.clearTimeout(updateTimer);
     updateTimer = window.setTimeout(render, 150);
+  }
+
+  function installNavigationHooks() {
+    const originalPushState = history.pushState;
+    const originalReplaceState = history.replaceState;
+
+    history.pushState = function pushState(...args) {
+      const result = originalPushState.apply(this, args);
+      scheduleRender();
+      return result;
+    };
+
+    history.replaceState = function replaceState(...args) {
+      const result = originalReplaceState.apply(this, args);
+      scheduleRender();
+      return result;
+    };
   }
 
   function findUsageCard() {
@@ -142,6 +163,7 @@
   }
 
   function boot() {
+    installNavigationHooks();
     render();
 
     const observer = new MutationObserver(scheduleRender);
