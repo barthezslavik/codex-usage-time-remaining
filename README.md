@@ -14,13 +14,11 @@ It keeps the original green weekly quota bar and adds a second blue bar below it
 4. Enable `Developer mode`.
 5. Click `Load unpacked`.
 6. Select the unzipped folder.
-7. Open or refresh `https://chatgpt.com/codex/cloud/settings/analytics#usage`.
+7. Open or refresh the [ChatGPT Codex usage page](https://chatgpt.com/codex/cloud/settings/analytics#usage).
 
 ## Privacy
 
-The extension runs locally in your browser on:
-
-`https://chatgpt.com/codex/cloud/settings/analytics*`
+The extension runs locally in your browser on the [ChatGPT Codex analytics page](https://chatgpt.com/codex/cloud/settings/analytics#usage).
 
 It reads the visible reset date from the usage card and renders a second progress strip. It does not collect, store, transmit, sell, or share personal data.
 
@@ -28,13 +26,9 @@ See [PRIVACY.md](PRIVACY.md).
 
 ## Support
 
-If this saves you time, you can support the project on Ko-fi:
+If this saves you time, you can [support the project on Ko-fi](https://ko-fi.com/barthezslavik).
 
-`https://ko-fi.com/barthezslavik`
-
-Source and issues:
-
-`https://github.com/barthezslavik/codex-usage-time-remaining`
+Source and issues are on [GitHub](https://github.com/barthezslavik/codex-usage-time-remaining).
 
 ## Disclaimer
 
