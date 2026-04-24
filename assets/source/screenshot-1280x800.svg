@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="800" viewBox="0 0 1280 800" role="img" aria-labelledby="title desc">
+  <title id="title">Codex Usage Time Remaining screenshot</title>
+  <desc id="desc">A dark ChatGPT Codex usage card with a green quota bar and a blue time remaining bar.</desc>
+  <rect width="1280" height="800" fill="#171717"/>
+  <rect x="58" y="90" width="1164" height="430" rx="42" fill="#202020" stroke="#303030" stroke-width="2"/>
+  <text x="108" y="178" fill="#a8a8a8" font-family="Arial, sans-serif" font-size="30" font-weight="700">Weekly usage limit</text>
+  <text x="108" y="250" fill="#ffffff" font-family="Arial, sans-serif" font-size="54" font-weight="700">75%</text>
+  <text x="222" y="250" fill="#ffffff" font-family="Arial, sans-serif" font-size="34">remaining</text>
+  <rect x="108" y="306" width="1060" height="24" rx="12" fill="#ebebf0"/>
+  <rect x="108" y="306" width="795" height="24" rx="12" fill="#22c55e"/>
+  <rect x="108" y="344" width="1060" height="24" rx="12" fill="#ebebf0"/>
+  <rect x="108" y="344" width="646" height="24" rx="12" fill="#0ea5e9"/>
+  <text x="108" y="430" fill="#a8a8a8" font-family="Arial, sans-serif" font-size="28">Resets Apr 28, 2026 10:28 PM</text>
+  <rect x="58" y="580" width="1164" height="132" rx="30" fill="#101010"/>
+  <text x="108" y="638" fill="#ffffff" font-family="Arial, sans-serif" font-size="30" font-weight="700">See quota and time at a glance</text>
+  <text x="108" y="682" fill="#a8a8a8" font-family="Arial, sans-serif" font-size="24">Green shows quota remaining. Blue shows time remaining in the weekly cycle.</text>
+</svg>

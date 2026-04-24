@@ -1,0 +1,13 @@
+.codex-usage-time-track {
+  position: absolute;
+  inset-inline-start: 0;
+  width: 100%;
+  background: #ebebf0;
+}
+
+.codex-usage-time-fill {
+  position: absolute;
+  inset-inline-start: 0;
+  background: #0ea5e9;
+  transition: width 240ms ease;
+}
