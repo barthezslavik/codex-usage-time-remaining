@@ -6,6 +6,7 @@
   const QUOTA_FILL_CLASS = "codex-usage-original-fill";
   const TIME_TRACK_CLASS = "codex-usage-time-track";
   const TIME_FILL_CLASS = "codex-usage-time-fill";
+  const TIME_LABEL_CLASS = "codex-usage-time-label";
   const UPDATE_INTERVAL_MS = 30 * 1000;
 
   let updateTimer = 0;
@@ -71,6 +72,17 @@
     return Number.isFinite(timestamp) ? new Date(timestamp) : null;
   }
 
+  function formatBarDelta(ms) {
+    const sign = "+";
+    const totalMinutes = Math.floor(Math.abs(ms) / 60000);
+    const hours = Math.floor(totalMinutes / 60);
+    const minutes = totalMinutes % 60;
+    if (hours > 0) {
+      return `${sign}${hours} hour${hours !== 1 ? "s" : ""} ${minutes} minute${minutes !== 1 ? "s" : ""}`;
+    }
+    return `${sign}${minutes} minute${minutes !== 1 ? "s" : ""}`;
+  }
+
   function createNode(tag, className, text) {
     const node = document.createElement(tag);
     if (className) node.className = className;
@@ -113,7 +125,7 @@
     if (!quotaFill || !bar) return;
 
     bar.classList.add(BAR_CLASS);
-    bar.style.height = "28px";
+    bar.style.height = "42px";
     bar.setAttribute("aria-label", `Limit ${values.quotaPercent}% remaining, time ${values.timePercent}% remaining`);
 
     const track = findTrack(bar);
@@ -139,6 +151,13 @@
     timeFill.style.width = `${values.timePercentPrecise}%`;
     timeFill.setAttribute("title", `Time remaining: ${values.timePercent}%`);
     setBarLayerLayout(timeFill, 16);
+
+    let timeLabel = bar.querySelector(`.${TIME_LABEL_CLASS}`);
+    if (!timeLabel) {
+      timeLabel = createNode("div", TIME_LABEL_CLASS);
+      bar.append(timeLabel);
+    }
+    timeLabel.textContent = values.timeRemainingLabel;
   }
 
   function render() {
@@ -158,7 +177,8 @@
     upsertTimeFill(card, {
       quotaPercent,
       timePercent,
-      timePercentPrecise: Number(timePercentPrecise.toFixed(2))
+      timePercentPrecise: Number(timePercentPrecise.toFixed(2)),
+      timeRemainingLabel: formatBarDelta((timePercentPrecise - (quotaPercent ?? 0)) / 100 * WEEK_MS)
     });
   }
 

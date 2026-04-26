@@ -11,3 +11,15 @@
   background: #0ea5e9;
   transition: width 240ms ease;
 }
+
+.codex-usage-time-label {
+  position: absolute;
+  inset-inline-start: 0;
+  top: 30px;
+  font-size: 10px;
+  line-height: 12px;
+  color: #0ea5e9;
+  font-weight: 600;
+  white-space: nowrap;
+  pointer-events: none;
+}
