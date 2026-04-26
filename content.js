@@ -83,7 +83,7 @@
       const className = String(node.className || "");
       const width = Number.parseFloat(node.style.width || "");
 
-      return className.includes("bg-[#22c55e]") && Number.isFinite(width);
+      return (className.includes("bg-[#22c55e]") || className.includes("bg-[#f87171]") || className.includes("bg-[#facc15]")) && Number.isFinite(width);
     });
 
     if (quotaPercent == null) return fills[0] || null;
