@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Codex Usage Time Remaining",
   "version": "1.0.0",
-  "description": "Adds a second weekly-cycle time strip to the ChatGPT Codex usage bar.",
+  "description": "Adds a second weekly-cycle time strip to supported AI usage bars.",
   "icons": {
     "16": "assets/icons/icon16.png",
     "32": "assets/icons/icon32.png",
@@ -11,7 +11,7 @@
   },
   "content_scripts": [
     {
-      "matches": ["https://chatgpt.com/codex/*"],
+      "matches": ["https://chatgpt.com/codex/*", "https://claude.ai/*"],
       "js": ["content.js"],
       "css": ["styles.css"],
       "run_at": "document_idle"
