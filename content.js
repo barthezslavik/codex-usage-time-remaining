@@ -104,6 +104,16 @@
     return `${sign}${minutes} minute${minutes !== 1 ? "s" : ""}`;
   }
 
+  function formatDuration(ms) {
+    const totalMinutes = Math.max(Math.floor(ms / 60000), 0);
+    const hours = Math.floor(totalMinutes / 60);
+    const minutes = totalMinutes % 60;
+    if (hours > 0) {
+      return `${hours} hour${hours !== 1 ? "s" : ""} ${minutes} minute${minutes !== 1 ? "s" : ""}`;
+    }
+    return `${minutes} minute${minutes !== 1 ? "s" : ""}`;
+  }
+
   function createNode(tag, className, text) {
     const node = document.createElement(tag);
     if (className) node.className = className;
@@ -156,11 +166,11 @@
     );
   }
 
-  function setBarLayerLayout(layer, top) {
+  function setBarLayerLayout(layer, top, height) {
     layer.style.position = "absolute";
     layer.style.insetInlineStart = "0";
     layer.style.top = `${top}px`;
-    layer.style.height = "12px";
+    layer.style.height = `${height}px`;
     layer.style.borderRadius = "999px";
   }
 
@@ -170,17 +180,21 @@
 
     if (!quotaFill || !bar) return;
 
+    const barHeight = values.barHeight || 12;
+    const barGap = 4;
+    const timeTop = barHeight + barGap;
+    const labelTop = timeTop + barHeight + 2;
     const barBackground = window.getComputedStyle(bar).backgroundColor;
     bar.classList.add(BAR_CLASS);
     bar.style.position = "relative";
-    bar.style.height = "42px";
+    bar.style.height = `${labelTop + 12}px`;
     bar.style.overflow = "visible";
     bar.style.background = "transparent";
     bar.setAttribute("aria-label", `${values.quotaText || `Limit ${values.quotaPercent}% remaining`}, ${values.timeTitle || "Time remaining"} ${values.timePercent}%`);
 
     const track = findTrack(bar);
     if (track) {
-      setBarLayerLayout(track, 0);
+      setBarLayerLayout(track, 0, barHeight);
     } else {
       let quotaTrack = bar.querySelector(`.${QUOTA_TRACK_CLASS}`);
       if (!quotaTrack) {
@@ -189,11 +203,11 @@
         quotaTrack.style.background = barBackground && barBackground !== "rgba(0, 0, 0, 0)" ? barBackground : "#ebebf0";
       }
       quotaTrack.style.width = "100%";
-      setBarLayerLayout(quotaTrack, 0);
+      setBarLayerLayout(quotaTrack, 0, barHeight);
     }
 
     quotaFill.classList.add(QUOTA_FILL_CLASS);
-    setBarLayerLayout(quotaFill, 0);
+    setBarLayerLayout(quotaFill, 0, barHeight);
 
     let timeTrack = bar.querySelector(`.${TIME_TRACK_CLASS}`);
     if (!timeTrack) {
@@ -201,7 +215,7 @@
       bar.append(timeTrack);
     }
 
-    setBarLayerLayout(timeTrack, 16);
+    setBarLayerLayout(timeTrack, timeTop, barHeight);
 
     let timeFill = bar.querySelector(`.${TIME_FILL_CLASS}`);
     if (!timeFill) {
@@ -211,13 +225,14 @@
 
     timeFill.style.width = `${values.timePercentPrecise}%`;
     timeFill.setAttribute("title", `${values.timeTitle || "Time remaining"}: ${values.timePercent}%`);
-    setBarLayerLayout(timeFill, 16);
+    setBarLayerLayout(timeFill, timeTop, barHeight);
 
     let timeLabel = bar.querySelector(`.${TIME_LABEL_CLASS}`);
     if (!timeLabel) {
       timeLabel = createNode("div", TIME_LABEL_CLASS);
       bar.append(timeLabel);
     }
+    timeLabel.style.top = `${labelTop}px`;
     timeLabel.textContent = values.timeRemainingLabel;
   }
 
@@ -316,12 +331,20 @@
     return getPercentWidth(progressBar.querySelector("div"));
   }
 
+  function getClaudeUsageLabel(row, progressBar) {
+    return Array.from(row.children)
+      .filter((child) => !child.contains(progressBar))
+      .map((child) => child.innerText || "")
+      .join("\n")
+      .trim();
+  }
+
   function findClaudeUsageRow(progressBar) {
     return findAncestor(progressBar, (node) => {
-      const text = (node.innerText || "").trim();
+      const label = getClaudeUsageLabel(node, progressBar);
       return (
-        /^(All models|Current session)\b/i.test(text) &&
-        /Resets\s+/i.test(text) &&
+        /^(All models|Current session)\b/i.test(label) &&
+        /Resets\s+/i.test(label) &&
         node.querySelectorAll('[role="progressbar"]').length === 1
       );
     }, 8);
@@ -332,7 +355,7 @@
 
     progressBars.forEach((progressBar) => {
       const row = findClaudeUsageRow(progressBar);
-      if (!row || !/^All models\b/i.test((row.innerText || "").trim())) {
+      if (!row || !/^All models\b/i.test(getClaudeUsageLabel(row, progressBar))) {
         removeTimeFill(progressBar);
         return;
       }
@@ -354,7 +377,8 @@
         timePercent: timeElapsedRounded,
         timePercentPrecise: Number(timeElapsedPercent.toFixed(2)),
         timeTitle: "Time elapsed",
-        timeRemainingLabel: formatBarDelta((timeElapsedPercent - usedPercent) / 100 * WEEK_MS)
+        timeRemainingLabel: `Resets in ${formatDuration(remainingMs)}`,
+        barHeight: 8
       });
     });
   }
