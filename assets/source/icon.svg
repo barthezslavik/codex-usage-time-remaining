@@ -1,9 +1,10 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128" role="img" aria-labelledby="title">
-  <title id="title">Codex Usage Time Remaining icon</title>
+  <title id="title">Usage timer icon</title>
   <rect width="128" height="128" rx="28" fill="#171717"/>
-  <rect x="22" y="40" width="84" height="14" rx="7" fill="#ebebf0"/>
-  <rect x="22" y="40" width="64" height="14" rx="7" fill="#22c55e"/>
-  <rect x="22" y="74" width="84" height="14" rx="7" fill="#ebebf0"/>
-  <rect x="22" y="74" width="52" height="14" rx="7" fill="#0ea5e9"/>
-  <circle cx="96" cy="82" r="10" fill="#171717" stroke="#0ea5e9" stroke-width="4"/>
+  <rect x="52" y="13" width="24" height="12" rx="5" fill="#e8e3d5"/>
+  <circle cx="64" cy="70" r="43" fill="#e8e3d5"/>
+  <path d="M64 27a43 43 0 0 1 43 43h-11a32 32 0 0 0-32-32z" fill="#d97757"/>
+  <circle cx="64" cy="70" r="31" fill="#171717"/>
+  <rect x="60.5" y="43" width="7" height="31" rx="3.5" fill="#e8e3d5"/>
+  <rect x="62" y="66" width="28" height="7" rx="3.5" fill="#e8e3d5" transform="rotate(22 62 66)"/>
 </svg>

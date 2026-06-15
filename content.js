@@ -39,7 +39,7 @@
   }
 
   function isClaudeTargetPage() {
-    return window.location.hostname === "claude.ai" && window.location.hash === "#settings/usage";
+    return window.location.hostname === "claude.ai";
   }
 
   function scheduleRender() {
@@ -119,6 +119,14 @@
     if (className) node.className = className;
     if (text != null) node.textContent = text;
     return node;
+  }
+
+  function sendUsageUpdate(payload) {
+    if (typeof chrome === "undefined" || !chrome.runtime?.sendMessage) return;
+
+    chrome.runtime.sendMessage({ type: "usage-time-update", ...payload }, () => {
+      void chrome.runtime.lastError;
+    });
   }
 
   function getPercentWidth(node) {
@@ -280,6 +288,12 @@
       timeTitle: "Time remaining",
       timeRemainingLabel: formatBarDelta((timePercentPrecise - (quotaPercent ?? 0)) / 100 * WEEK_MS)
     });
+
+    sendUsageUpdate({
+      provider: "chatgpt",
+      resetAt: resetDate.getTime(),
+      quotaPercent
+    });
   }
 
   function findAncestor(node, predicate, maxDepth) {
@@ -316,9 +330,43 @@
     return resetDate;
   }
 
+  function parseClaudeResetDuration(rawDuration) {
+    const hoursMatch = rawDuration.match(/(\d+)\s*(?:h|hr|hrs|hour|hours)\b/i);
+    const minutesMatch = rawDuration.match(/(\d+)\s*(?:m|min|mins|minute|minutes)\b/i);
+    const hours = hoursMatch ? Number(hoursMatch[1]) : 0;
+    const minutes = minutesMatch ? Number(minutesMatch[1]) : 0;
+    const durationMs = (hours * 60 + minutes) * 60000;
+
+    return durationMs > 0 ? new Date(Date.now() + durationMs) : null;
+  }
+
+  function parseClaudeResetTime(rawTime) {
+    const match = rawTime.match(/^(\d{1,2})(?::(\d{2}))?\s*(am|pm)$/i);
+    if (!match) return null;
+
+    let hours = Number(match[1]);
+    const minutes = Number(match[2] || 0);
+    const meridiem = match[3].toLowerCase();
+    if (hours === 12) hours = 0;
+    if (meridiem === "pm") hours += 12;
+
+    const resetDate = new Date();
+    resetDate.setHours(hours, minutes, 0, 0);
+    if (resetDate.getTime() <= Date.now()) resetDate.setDate(resetDate.getDate() + 1);
+
+    return resetDate;
+  }
+
   function extractClaudeResetDate(row) {
-    const match = (row.innerText || "").match(/Resets\s+((?:sun|mon|tue|wed|thu|fri|sat)[a-z]*\s+\d{1,2}(?::\d{2})?\s*(?:am|pm))/i);
-    return match ? parseClaudeResetDate(match[1]) : null;
+    const text = row.innerText || row.textContent || "";
+    const dateMatch = text.match(/Resets\s+((?:sun|mon|tue|wed|thu|fri|sat)[a-z]*\s+\d{1,2}(?::\d{2})?\s*(?:am|pm))/i);
+    if (dateMatch) return parseClaudeResetDate(dateMatch[1]);
+
+    const durationMatch = text.match(/Resets\s+in\s+([^\n]+)/i);
+    if (durationMatch) return parseClaudeResetDuration(durationMatch[1]);
+
+    const timeMatch = text.match(/Resets\s+(\d{1,2}(?::\d{2})?\s*(?:am|pm))/i);
+    return timeMatch ? parseClaudeResetTime(timeMatch[1]) : null;
   }
 
   function extractClaudeUsagePercent(row, progressBar) {
@@ -329,6 +377,35 @@
     if (textMatch) return Number(textMatch[1]);
 
     return getPercentWidth(progressBar.querySelector("div"));
+  }
+
+  function findClaudeSessionResetDate() {
+    const labels = Array.from(document.querySelectorAll("span, div")).filter((node) => {
+      const text = (node.textContent || "").trim();
+      return /^Current session$/i.test(text);
+    });
+
+    for (const label of labels) {
+      const container = findAncestor(label, (node) => /Resets\s+in\s+/i.test(node.innerText || node.textContent || ""), 6);
+      const resetDate = container ? extractClaudeResetDate(container) : null;
+      if (resetDate) return resetDate;
+    }
+
+    const containers = Array.from(document.querySelectorAll("div")).filter((node) => {
+      const text = (node.innerText || node.textContent || "").trim();
+      return /^Current session\b/i.test(text) && /Resets\s+in\s+/i.test(text);
+    });
+
+    for (const container of containers) {
+      const resetDate = extractClaudeResetDate(container);
+      if (resetDate) return resetDate;
+    }
+
+    if (/Usage limit reached/i.test(document.body.innerText || document.body.textContent || "")) {
+      return extractClaudeResetDate(document.body);
+    }
+
+    return null;
   }
 
   function getClaudeUsageLabel(row, progressBar) {
@@ -352,18 +429,30 @@
 
   function renderClaude() {
     const progressBars = Array.from(document.querySelectorAll('[role="progressbar"]'));
+    const sessionResetDate = findClaudeSessionResetDate();
+    let sentSessionUpdate = false;
+
+    if (sessionResetDate) {
+      sendUsageUpdate({
+        provider: "claude-session",
+        resetAt: sessionResetDate.getTime(),
+        quotaPercent: null
+      });
+      sentSessionUpdate = true;
+    }
 
     progressBars.forEach((progressBar) => {
       const row = findClaudeUsageRow(progressBar);
-      if (!row || !/^All models\b/i.test(getClaudeUsageLabel(row, progressBar))) {
+      const label = row ? getClaudeUsageLabel(row, progressBar) : "";
+      const resetDate = row ? extractClaudeResetDate(row) : null;
+      const usedPercent = row ? extractClaudeUsagePercent(row, progressBar) : null;
+
+      if (!row || !/^All models\b/i.test(label)) {
         removeTimeFill(progressBar);
         return;
       }
 
-      const resetDate = extractClaudeResetDate(row);
       if (!resetDate) return;
-
-      const usedPercent = extractClaudeUsagePercent(row, progressBar);
       if (usedPercent == null) return;
 
       const remainingMs = resetDate.getTime() - Date.now();
@@ -380,6 +469,14 @@
         timeRemainingLabel: `Resets in ${formatDuration(remainingMs)}`,
         barHeight: 8
       });
+
+      if (!sentSessionUpdate) {
+        sendUsageUpdate({
+          provider: "claude",
+          resetAt: resetDate.getTime(),
+          quotaPercent: usedPercent
+        });
+      }
     });
   }
 

@@ -1,8 +1,8 @@
 # Codex Usage Time Remaining
 
-Tiny Chrome extension for the ChatGPT Codex usage page.
+Tiny Chrome extension for supported AI usage pages.
 
-It keeps the original green weekly quota bar and adds a second blue bar below it. The blue bar shows how much time is left in the current 7-day reset cycle, based on the reset time displayed by ChatGPT.
+It keeps the original usage bar and adds a second time bar below it. The toolbar icon also shows a timer badge based on the latest reset time seen on the usage page.
 
 ![Screenshot](assets/store/screenshot-1280x800.png)
 
@@ -14,13 +14,13 @@ It keeps the original green weekly quota bar and adds a second blue bar below it
 4. Enable `Developer mode`.
 5. Click `Load unpacked`.
 6. Select the unzipped folder.
-7. Open the [ChatGPT Codex usage page](https://chatgpt.com/codex/settings/usage).
+7. Open the [ChatGPT Codex usage page](https://chatgpt.com/codex/settings/usage) or Claude usage settings.
 
 ## Privacy
 
-The extension is injected only on `chatgpt.com/codex/*` pages and renders the bar only on the [ChatGPT Codex usage page](https://chatgpt.com/codex/settings/usage) or its redirected analytics URL.
+The extension is injected only on `chatgpt.com/codex/*` and `claude.ai/*` pages, and renders only on supported usage settings views.
 
-It reads the visible reset date from the usage card and renders a second progress strip. It does not collect, store, transmit, sell, or share personal data.
+It reads the visible reset date from the usage card, renders a second progress strip, and stores the latest reset snapshot locally for the toolbar icon. It does not transmit, sell, or share personal data.
 
 See [PRIVACY.md](PRIVACY.md).
 
@@ -32,4 +32,4 @@ Source and issues are on [GitHub](https://github.com/barthezslavik/codex-usage-t
 
 ## Disclaimer
 
-This is an unofficial extension and is not affiliated with OpenAI, ChatGPT, Codex, Google, Chrome, or Ko-fi.
+This is an unofficial extension and is not affiliated with OpenAI, ChatGPT, Codex, Anthropic, Claude, Google, Chrome, or Ko-fi.
