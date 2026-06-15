@@ -124,6 +124,19 @@ function buildIconImageData(remainingPercent, badgeText) {
   return Object.fromEntries(ICON_SIZES.map((size) => [size, drawTimerIcon(size, remainingPercent, badgeText)]));
 }
 
+function isFreshState(state) {
+  if (!state?.resetAt || !state?.updatedAt) return false;
+  return state.resetAt > Date.now() && Date.now() - state.updatedAt <= WEEK_MS + 60 * 60 * 1000;
+}
+
+function shouldKeepCurrentState(currentState, nextState) {
+  return (
+    currentState?.provider === "claude-session" &&
+    nextState?.provider !== "claude-session" &&
+    isFreshState(currentState)
+  );
+}
+
 async function getState() {
   const result = await chrome.storage.local.get(STATE_KEY);
   return result[STATE_KEY] || null;
@@ -179,14 +192,21 @@ async function updateAction(state) {
 chrome.runtime.onMessage.addListener((message) => {
   if (message?.type !== "usage-time-update") return false;
 
-  const state = {
+  const nextState = {
     provider: message.provider,
     resetAt: message.resetAt,
     quotaPercent: message.quotaPercent,
     updatedAt: Date.now()
   };
 
-  saveState(state).then(() => updateAction(state));
+  getState()
+    .then((currentState) => {
+      if (shouldKeepCurrentState(currentState, nextState)) {
+        return updateAction(currentState);
+      }
+
+      return saveState(nextState).then(() => updateAction(nextState));
+    });
   chrome.alarms.create(UPDATE_ALARM, { periodInMinutes: 1 });
   return false;
 });
