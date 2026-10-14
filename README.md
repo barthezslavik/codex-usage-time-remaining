@@ -18,7 +18,7 @@ It keeps the original usage bar and adds a second time bar below it. The toolbar
 
 ## Privacy
 
-The extension is injected only on `chatgpt.com/codex/*` and `claude.ai/*` pages, and renders only on supported usage settings views.
+The extension is injected only on `chatgpt.com/codex/*`, `chatgpt.com/settings/*`, and `claude.ai/*` pages, and renders only on supported usage settings views.
 
 It reads the visible reset date from the usage card, renders a second progress strip, and stores the latest reset snapshot locally for the toolbar icon. It does not transmit, sell, or share personal data.
 

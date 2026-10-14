@@ -35,7 +35,7 @@
     const normalizedPath = window.location.pathname.replace(/\/$/, "");
     return (
       window.location.hostname === "chatgpt.com" &&
-      (normalizedPath === TARGET_PATH || normalizedPath === LEGACY_TARGET_PATH)
+      (normalizedPath === TARGET_PATH || normalizedPath === LEGACY_TARGET_PATH || normalizedPath.startsWith("/codex") || normalizedPath === "/settings/usage")
     );
   }
 
@@ -270,8 +270,7 @@
     });
   }
 
-  function upsertTimeStrip(meter, values) {
-    const host = meter.closest('[data-cds="Meter"]') || meter;
+  function upsertTimeStrip(meter, values, host = meter.closest('[data-cds="Meter"]') || meter) {
     let strip = host.nextElementSibling;
 
     if (!strip?.classList.contains(TIME_STRIP_CLASS)) {
@@ -295,7 +294,65 @@
     if (strip?.classList.contains(TIME_STRIP_CLASS)) strip.remove();
   }
 
+  function parseTitleDate(title) {
+    const timestamp = Date.parse(
+      title
+        .replace(/^[a-z]+,\s*/i, "")
+        .replace(/\s+at\s+/i, " ")
+    );
+    return Number.isFinite(timestamp) ? new Date(timestamp) : null;
+  }
+
+  function parseResetDuration(text) {
+    const match = text.match(/Resets\s+in\s+((?:\d+\s*[dhm]\s*)+)/i);
+    if (!match) return null;
+
+    const units = { d: 24 * 60, h: 60, m: 1 };
+    const minutes = Array.from(match[1].matchAll(/(\d+)\s*([dhm])/gi)).reduce((total, part) => {
+      return total + Number(part[1]) * units[part[2].toLowerCase()];
+    }, 0);
+
+    return minutes > 0 ? new Date(Date.now() + minutes * 60000) : null;
+  }
+
+  function renderChatGPTPlanLimits() {
+    const progresses = Array.from(document.querySelectorAll("progress"));
+    let rendered = false;
+
+    progresses.forEach((progress) => {
+      const row = findAncestor(progress, (node) => /^\s*Weekly limit\b/i.test(node.innerText || ""), 6);
+      if (!row) return;
+
+      const resetNode = Array.from(row.querySelectorAll("[title]")).find((node) => /Resets\s+/i.test(node.textContent || ""));
+      const resetDate = (resetNode && parseTitleDate(resetNode.getAttribute("title"))) || parseResetDuration(row.innerText || "");
+      if (!resetDate) return;
+
+      const leftMatch = (row.innerText || "").match(/(\d+(?:\.\d+)?)%\s+left/i);
+      const quotaPercent = leftMatch ? Number(leftMatch[1]) : Number(progress.value);
+      const remainingMs = resetDate.getTime() - Date.now();
+      const timePercentPrecise = clamp((remainingMs / WEEK_MS) * 100, 0, 100);
+
+      upsertTimeStrip(progress, {
+        timePercent: Math.round(timePercentPrecise),
+        timePercentPrecise: Number(timePercentPrecise.toFixed(2)),
+        timeTitle: "Time remaining",
+        timeRemainingLabel: formatBarDelta((timePercentPrecise - quotaPercent) / 100 * WEEK_MS)
+      }, progress.parentElement);
+
+      sendUsageUpdate({
+        provider: "chatgpt",
+        resetAt: resetDate.getTime(),
+        quotaPercent
+      });
+      rendered = true;
+    });
+
+    return rendered;
+  }
+
   function renderChatGPT() {
+    if (renderChatGPTPlanLimits()) return;
+
     const card = findUsageCard();
     if (!card) return;
 

@@ -5,6 +5,7 @@ Codex Usage Time Remaining does not transmit, sell, or share personal data.
 The extension is injected only on:
 
 `https://chatgpt.com/codex/*`
+`https://chatgpt.com/settings/*`
 `https://claude.ai/*`
 
 It renders only on supported usage settings pages. It reads the visible usage/reset information in the page DOM to calculate a local time percentage from the reset date shown by the site. The calculation happens entirely in the browser.
