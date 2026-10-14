@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.1.0
+
+- Adds Claude usage support with a time strip under the weekly bar and a toolbar timer badge.
+- Supports the new Claude usage meter layout ("This week" row).
+- Supports the new ChatGPT plan limits page at `chatgpt.com/settings/usage`.
+
 ## 1.0.0
 
 - Initial release.
