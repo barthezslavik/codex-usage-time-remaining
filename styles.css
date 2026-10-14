@@ -23,3 +23,27 @@
   white-space: nowrap;
   pointer-events: none;
 }
+
+.codex-usage-time-strip {
+  margin-top: 4px;
+}
+
+.codex-usage-time-strip .codex-usage-time-track {
+  position: relative;
+  height: 4px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: rgba(14, 165, 233, 0.2);
+}
+
+.codex-usage-time-strip .codex-usage-time-fill {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  border-radius: 999px;
+}
+
+.codex-usage-time-strip .codex-usage-time-label {
+  position: static;
+  margin-top: 2px;
+}

@@ -8,6 +8,7 @@
   const TIME_TRACK_CLASS = "codex-usage-time-track";
   const TIME_FILL_CLASS = "codex-usage-time-fill";
   const TIME_LABEL_CLASS = "codex-usage-time-label";
+  const TIME_STRIP_CLASS = "codex-usage-time-strip";
   const UPDATE_INTERVAL_MS = 30 * 1000;
   const WEEKDAYS = {
     sun: 0,
@@ -269,6 +270,31 @@
     });
   }
 
+  function upsertTimeStrip(meter, values) {
+    const host = meter.closest('[data-cds="Meter"]') || meter;
+    let strip = host.nextElementSibling;
+
+    if (!strip?.classList.contains(TIME_STRIP_CLASS)) {
+      strip = createNode("div", TIME_STRIP_CLASS);
+      const track = createNode("div", TIME_TRACK_CLASS);
+      track.append(createNode("div", TIME_FILL_CLASS));
+      strip.append(track, createNode("div", TIME_LABEL_CLASS));
+      host.after(strip);
+    }
+
+    const fill = strip.querySelector(`.${TIME_FILL_CLASS}`);
+    fill.style.width = `${values.timePercentPrecise}%`;
+    strip.setAttribute("title", `${values.timeTitle || "Time remaining"}: ${values.timePercent}%`);
+    const label = strip.querySelector(`.${TIME_LABEL_CLASS}`);
+    if (label.textContent !== values.timeRemainingLabel) label.textContent = values.timeRemainingLabel;
+  }
+
+  function removeTimeStrip(meter) {
+    const host = meter.closest('[data-cds="Meter"]') || meter;
+    const strip = host.nextElementSibling;
+    if (strip?.classList.contains(TIME_STRIP_CLASS)) strip.remove();
+  }
+
   function renderChatGPT() {
     const card = findUsageCard();
     if (!card) return;
@@ -365,7 +391,7 @@
     const durationMatch = text.match(/Resets\s+in\s+([^\n]+)/i);
     if (durationMatch) return parseClaudeResetDuration(durationMatch[1]);
 
-    const timeMatch = text.match(/Resets\s+(\d{1,2}(?::\d{2})?\s*(?:am|pm))/i);
+    const timeMatch = text.match(/Resets\s+(?:at\s+)?(\d{1,2}(?::\d{2})?\s*(?:am|pm))/i);
     return timeMatch ? parseClaudeResetTime(timeMatch[1]) : null;
   }
 
@@ -386,14 +412,14 @@
     });
 
     for (const label of labels) {
-      const container = findAncestor(label, (node) => /Resets\s+in\s+/i.test(node.innerText || node.textContent || ""), 6);
+      const container = findAncestor(label, (node) => /Resets\s+(?:in|at)\s+/i.test(node.innerText || node.textContent || ""), 6);
       const resetDate = container ? extractClaudeResetDate(container) : null;
       if (resetDate) return resetDate;
     }
 
     const containers = Array.from(document.querySelectorAll("div")).filter((node) => {
       const text = (node.innerText || node.textContent || "").trim();
-      return /^Current session\b/i.test(text) && /Resets\s+in\s+/i.test(text);
+      return /^Current session\b/i.test(text) && /Resets\s+(?:in|at)\s+/i.test(text);
     });
 
     for (const container of containers) {
@@ -420,15 +446,15 @@
     return findAncestor(progressBar, (node) => {
       const label = getClaudeUsageLabel(node, progressBar);
       return (
-        /^(All models|Current session)\b/i.test(label) &&
+        /^(All models|This week|Current session)\b/i.test(label) &&
         /Resets\s+/i.test(label) &&
-        node.querySelectorAll('[role="progressbar"]').length === 1
+        node.querySelectorAll('[role="progressbar"], [role="meter"]').length === 1
       );
     }, 8);
   }
 
   function renderClaude() {
-    const progressBars = Array.from(document.querySelectorAll('[role="progressbar"]'));
+    const progressBars = Array.from(document.querySelectorAll('[role="progressbar"], [role="meter"]'));
     const sessionResetDate = findClaudeSessionResetDate();
     let sentSessionUpdate = false;
 
@@ -447,8 +473,11 @@
       const resetDate = row ? extractClaudeResetDate(row) : null;
       const usedPercent = row ? extractClaudeUsagePercent(row, progressBar) : null;
 
-      if (!row || !/^All models\b/i.test(label)) {
-        removeTimeFill(progressBar);
+      const isMeter = progressBar.getAttribute("role") === "meter";
+
+      if (!row || !/^(All models|This week)\b/i.test(label)) {
+        if (isMeter) removeTimeStrip(progressBar);
+        else removeTimeFill(progressBar);
         return;
       }
 
@@ -460,7 +489,7 @@
       const timeElapsedPercent = 100 - timeRemainingPercent;
       const timeElapsedRounded = Math.round(timeElapsedPercent);
 
-      upsertTimeFill(row, {
+      const timeValues = {
         quotaPercent: usedPercent,
         quotaText: `Usage ${usedPercent}% used`,
         timePercent: timeElapsedRounded,
@@ -468,7 +497,10 @@
         timeTitle: "Time elapsed",
         timeRemainingLabel: `Resets in ${formatDuration(remainingMs)}`,
         barHeight: 8
-      });
+      };
+
+      if (isMeter) upsertTimeStrip(progressBar, timeValues);
+      else upsertTimeFill(row, timeValues);
 
       if (!sentSessionUpdate) {
         sendUsageUpdate({
