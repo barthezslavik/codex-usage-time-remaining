@@ -94,17 +94,6 @@
     return Number.isFinite(timestamp) ? new Date(timestamp) : null;
   }
 
-  function formatBarDelta(ms) {
-    const sign = ms >= 0 ? "+" : "-";
-    const totalMinutes = Math.floor(Math.abs(ms) / 60000);
-    const hours = Math.floor(totalMinutes / 60);
-    const minutes = totalMinutes % 60;
-    if (hours > 0) {
-      return `${sign}${hours} hour${hours !== 1 ? "s" : ""} ${minutes} minute${minutes !== 1 ? "s" : ""}`;
-    }
-    return `${sign}${minutes} minute${minutes !== 1 ? "s" : ""}`;
-  }
-
   function formatDuration(ms) {
     const totalMinutes = Math.max(Math.floor(ms / 60000), 0);
     const hours = Math.floor(totalMinutes / 60);
@@ -113,6 +102,19 @@
       return `${hours} hour${hours !== 1 ? "s" : ""} ${minutes} minute${minutes !== 1 ? "s" : ""}`;
     }
     return `${minutes} minute${minutes !== 1 ? "s" : ""}`;
+  }
+
+  function formatCatchUpLabel(waitMs) {
+    if (waitMs > 0) {
+      const catchUpDate = new Date(Date.now() + waitMs);
+      const sameDay = catchUpDate.toDateString() === new Date().toDateString();
+      return `Wait until ${catchUpDate.toLocaleString("en-US", {
+        weekday: sameDay ? undefined : "short",
+        hour: "numeric",
+        minute: "2-digit"
+      })}`;
+    }
+    return `${formatDuration(-waitMs)} spare`;
   }
 
   function createNode(tag, className, text) {
@@ -336,7 +338,7 @@
         timePercent: Math.round(timePercentPrecise),
         timePercentPrecise: Number(timePercentPrecise.toFixed(2)),
         timeTitle: "Time remaining",
-        timeRemainingLabel: formatBarDelta((timePercentPrecise - quotaPercent) / 100 * WEEK_MS)
+        timeRemainingLabel: formatCatchUpLabel((timePercentPrecise - quotaPercent) / 100 * WEEK_MS)
       }, progress.parentElement);
 
       sendUsageUpdate({
@@ -369,7 +371,7 @@
       timePercent,
       timePercentPrecise: Number(timePercentPrecise.toFixed(2)),
       timeTitle: "Time remaining",
-      timeRemainingLabel: formatBarDelta((timePercentPrecise - (quotaPercent ?? 0)) / 100 * WEEK_MS)
+      timeRemainingLabel: formatCatchUpLabel((timePercentPrecise - (quotaPercent ?? 0)) / 100 * WEEK_MS)
     });
 
     sendUsageUpdate({
@@ -552,7 +554,7 @@
         timePercent: timeElapsedRounded,
         timePercentPrecise: Number(timeElapsedPercent.toFixed(2)),
         timeTitle: "Time elapsed",
-        timeRemainingLabel: `Resets in ${formatDuration(remainingMs)}`,
+        timeRemainingLabel: formatCatchUpLabel((usedPercent - timeElapsedPercent) / 100 * WEEK_MS),
         barHeight: 8
       };
 
